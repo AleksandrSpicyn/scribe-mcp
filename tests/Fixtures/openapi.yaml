@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: Example API
+  version: 1.0.0
+  description: Контракт, сгенерированный Scribe.
+security:
+  - bearerAuth: []
+paths:
+  /api/products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Идентификатор товара из URL.
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 42
+    get:
+      summary: Получить товар
+      description: Возвращает публичную карточку товара.
+      tags:
+        - Товары
+      parameters:
+        - name: sort
+          in: query
+          description: Порядок сортировки вариантов товара.
+          schema:
+            type: string
+            nullable: true
+            default: popular
+            enum:
+              - popular
+              - cheap
+              - expensive
+              - rating
+              - null
+            pattern: '^[a-z_]+$'
+            example: popular
+        - name: page
+          in: query
+          description: Номер страницы.
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 101
+            exclusiveMaximum: true
+            example: 1
+      responses:
+        '200':
+          description: Товар найден.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    description: Список вариантов товара.
+                    uniqueItems: true
+                    items:
+                      $ref: '#/components/schemas/Product'
+                    example:
+                      - id: 42
+                        name: Молоко
+                        state: active
+                        count_in_store: 0
+                        available: false
+                        tags: []
+                  meta:
+                    type: object
+                    description: Метаданные выдачи.
+                    properties:
+                      source:
+                        oneOf:
+                          - type: string
+                            enum:
+                              - catalog
+                          - type: integer
+                            minimum: 0
+                        description: Источник данных.
+                      identifier:
+                        anyOf:
+                          - type: integer
+                            minimum: 1
+                          - type: string
+                            pattern: '^[A-Z0-9]+$'
+                        description: Числовой или символьный идентификатор.
+                      filters:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        nullable: true
+                        example: null
+              examples:
+                товар:
+                  summary: Товар есть в наличии.
+                  value:
+                    data:
+                      - id: 42
+                        name: Молоко
+                        state: active
+                        count_in_store: 0
+                        available: false
+                        tags: []
+                    meta:
+                      source: catalog
+                      identifier: A42
+                      filters: null
+                пустой_результат:
+                  summary: Подходящих вариантов нет.
+                  value:
+                    data: []
+                    meta:
+                      source: 0
+                      identifier: 42
+                      filters: {}
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Частичный ответ
+                status: 200
+        '404':
+          description: Товар не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                не_найден:
+                  value:
+                    type: about:blank
+                    title: Товар не найден
+                    status: 404
+    options:
+      responses:
+        '204':
+          description: Поддерживаемые параметры запроса.
+  /admin/products:
+    post:
+      summary: Создать товар
+      description: Создаёт товар в административной панели.
+      tags:
+        - Администрирование товаров
+      security:
+        - integrationToken: []
+      requestBody:
+        required: true
+        description: Данные нового товара.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Название товара.
+                  minLength: 1
+                  example: Хлеб
+                state:
+                  type: string
+                  nullable: true
+                  enum:
+                    - draft
+                    - active
+                    - null
+                  default: draft
+                attributes:
+                  type: object
+                  additionalProperties:
+                    type: string
+            examples:
+              новый_товар:
+                value:
+                  name: Хлеб
+                  state: draft
+                  attributes:
+                    country: RU
+      responses:
+        '201':
+          description: Товар создан.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+              example:
+                data:
+                  id: 43
+                  name: Хлеб
+                  state: draft
+                  count_in_store: 0
+                  available: false
+                  tags: []
+        '422':
+          description: Ошибка валидации.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationProblem'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    integrationToken:
+      type: http
+      scheme: bearer
+      description: Токен integration client.
+  schemas:
+    Product:
+      type: object
+      description: Карточка товара.
+      required:
+        - id
+        - name
+        - state
+        - count_in_store
+        - available
+        - tags
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Идентификатор товара.
+          example: 42
+        name:
+          type: string
+          description: Название товара.
+          example: Молоко
+        state:
+          type: string
+          description: Текущее состояние товара.
+          enum:
+            - draft
+            - active
+            - archived
+          example: active
+        count_in_store:
+          type: integer
+          description: Остаток товара.
+          default: 0
+          example: 0
+        available:
+          type: boolean
+          description: Доступен для заказа.
+          default: false
+          example: false
+        tags:
+          type: array
+          description: Метки товара.
+          uniqueItems: true
+          items:
+            type: string
+          example: []
+    Problem:
+      type: object
+      description: Ошибка API.
+      required:
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          example: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+    ValidationProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string

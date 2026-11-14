@@ -1,0 +1,61 @@
+{
+    "name": "aleksandrspicyn/scribe-mcp",
+    "description": "Read-only Laravel MCP tools for Scribe-generated OpenAPI documentation.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "mcp",
+        "scribe",
+        "openapi"
+    ],
+    "homepage": "https://github.com/AleksandrSpicyn/scribe-mcp",
+    "require": {
+        "php": "^8.4",
+        "ext-ctype": "*",
+        "ext-mbstring": "*",
+        "illuminate/container": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/filesystem": "^13.0",
+        "illuminate/support": "^13.0",
+        "laravel/mcp": "^1.0.1",
+        "spatie/laravel-data": "^4.23",
+        "symfony/yaml": "^8.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.32",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^5.3",
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "AleksandrSpicyn\\ScribeMcp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AleksandrSpicyn\\ScribeMcp\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AleksandrSpicyn\\ScribeMcp\\ScribeMcpServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "format": "pint",
+        "analyse": "phpstan analyse --memory-limit=512M"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    }
+}
